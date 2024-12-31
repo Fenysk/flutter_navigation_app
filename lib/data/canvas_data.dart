@@ -37,6 +37,28 @@ class CanvasData {
     ));
   }
 
+  static void createNodeWithConnections({
+    required Offset position,
+    required String nodeName,
+    required List<Offset> selectedNodes,
+  }) {
+    CanvasData.addNode(
+      position: position,
+      nodeName: nodeName,
+    );
+
+    for (var selectedNode in selectedNodes) {
+      final existingNodeName = CanvasData.nodes[selectedNode]!;
+      CanvasData.addRoute(
+        offset1: selectedNode,
+        offset2: position,
+        nodeName1: existingNodeName,
+        nodeName2: nodeName,
+        routeName: '$existingNodeName-$nodeName',
+      );
+    }
+  }
+
   static void clearData() {
     nodes.clear();
     routes.clear();
