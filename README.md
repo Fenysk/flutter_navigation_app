@@ -1,3 +1,3 @@
-# navigation_training
+# GPS app
 
-A new Flutter project.
+[Try here](https://fenysk-gps-app.vercel.app/)
