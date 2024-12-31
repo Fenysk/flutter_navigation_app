@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:navigation_training/navigation_canvas.dart';
+import 'package:navigation_training/services/canvas_service.dart';
+import 'package:navigation_training/services/navigation_service.dart';
 
 void main() {
   runApp(const MainApp());
@@ -10,6 +11,8 @@ class MainApp extends StatelessWidget {
   const MainApp({super.key});
   @override
   Widget build(BuildContext context) {
+    final navigationService = NavigationService();
+
     return MaterialApp(
       home: Scaffold(
         body: Center(
@@ -22,18 +25,15 @@ class MainApp extends StatelessWidget {
                 fit: BoxFit.cover,
               ),
               CustomPaint(
-                painter: NavigationCanvas(),
+                painter: NavigationCanvas(
+                  navigationService: navigationService,
+                ),
                 size: const Size(1000, 1000),
               ),
               MouseRegion(
+                onHover: CanvasService.onNodeHover,
                 child: GestureDetector(
-                  onTapDown: (TapDownDetails details) {
-                    final position = details.localPosition;
-                    Clipboard.setData(
-                      ClipboardData(text: 'Offset(${position.dx.round()}, ${position.dy.round()})'),
-                    );
-                    print('Coordonnées copiées: ${position.dx}, ${position.dy}');
-                  },
+                  onTapDown: CanvasService.onNodeTap,
                   child: Container(
                     width: 1000,
                     height: 1000,

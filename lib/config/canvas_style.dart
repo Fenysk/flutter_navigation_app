@@ -10,6 +10,10 @@ class CanvasStyle {
     ..color = Colors.red
     ..style = PaintingStyle.fill;
 
+  static final Paint selectedNodeStyle = Paint()
+    ..color = Colors.green
+    ..style = PaintingStyle.fill;
+
   static final Paint routeStyle = Paint()
     ..color = Colors.blue
     ..style = PaintingStyle.stroke

@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:navigation_training/config/canvas_style.dart';
 import 'package:navigation_training/data/canvas_data.dart';
 import 'package:navigation_training/services/canvas_service.dart';
+import 'package:navigation_training/services/navigation_service.dart';
 
 class NavigationCanvas extends CustomPainter {
-  NavigationCanvas() {
+  final NavigationService navigationService;
+
+  NavigationCanvas({required this.navigationService}) : super(repaint: navigationService) {
     CanvasData.clearData();
     CanvasData.generateMap();
   }
