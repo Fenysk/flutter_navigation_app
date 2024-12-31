@@ -1,6 +1,11 @@
+import 'dart:convert';
 import 'dart:ui';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CanvasData {
+  static const String _nodesKey = 'nodes_data';
+  static const String _routesKey = 'routes_data';
+
   static Map<Offset, String> nodes = {};
 
   static List<
@@ -15,6 +20,7 @@ class CanvasData {
     required String nodeName,
   }) {
     nodes[position] = nodeName;
+    saveData();
   }
 
   static void addRoute({
@@ -35,6 +41,7 @@ class CanvasData {
       offset2,
       routeName
     ));
+    saveData();
   }
 
   static void createNodeWithConnections({
@@ -62,6 +69,7 @@ class CanvasData {
   static void clearData() {
     nodes.clear();
     routes.clear();
+    saveData();
   }
 
   static void generateMap() {
@@ -192,5 +200,53 @@ class CanvasData {
       nodeName2: 'Berlin',
       routeName: 'Berlin-Zurich',
     );
+  }
+
+  static Future<void> saveData() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final nodesData = nodes.map((key, value) => MapEntry('${key.dx},${key.dy}', value));
+
+    final routesData = routes
+        .map((route) => {
+              'start': '${route.$1.dx},${route.$1.dy}',
+              'end': '${route.$2.dx},${route.$2.dy}',
+              'name': route.$3,
+            })
+        .toList();
+
+    await prefs.setString(_nodesKey, jsonEncode(nodesData));
+    await prefs.setString(_routesKey, jsonEncode(routesData));
+  }
+
+  static Future<void> loadData() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final nodesString = prefs.getString(_nodesKey);
+    final routesString = prefs.getString(_routesKey);
+
+    if (nodesString != null) {
+      final Map<String, dynamic> nodesData = jsonDecode(nodesString);
+      nodes.clear();
+      nodesData.forEach((key, value) {
+        final coordinates = key.split(',');
+        final offset = Offset(double.parse(coordinates[0]), double.parse(coordinates[1]));
+        nodes[offset] = value;
+      });
+    }
+
+    if (routesString != null) {
+      final List<dynamic> routesData = jsonDecode(routesString);
+      routes.clear();
+      for (var route in routesData) {
+        final startCoords = route['start'].split(',');
+        final endCoords = route['end'].split(',');
+        routes.add((
+          Offset(double.parse(startCoords[0]), double.parse(startCoords[1])),
+          Offset(double.parse(endCoords[0]), double.parse(endCoords[1])),
+          route['name']
+        ));
+      }
+    }
   }
 }

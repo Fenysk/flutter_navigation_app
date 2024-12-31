@@ -7,7 +7,8 @@ import 'package:navigation_training/widgets/navigation_data_display.dart';
 import 'package:navigation_training/widgets/node_widget.dart';
 import 'package:navigation_training/widgets/route_widget.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MainApp());
 }
 
@@ -24,8 +25,16 @@ class _MainAppState extends State<MainApp> {
   @override
   void initState() {
     super.initState();
-    _initializeMap();
+    _loadSavedData();
+  }
+
+  Future<void> _loadSavedData() async {
+    await CanvasData.loadData();
+    if (CanvasData.nodes.isEmpty) {
+      _initializeMap();
+    }
     _setupNavigationListener();
+    setState(() {});
   }
 
   void _initializeMap() => CanvasData.generateMap();
