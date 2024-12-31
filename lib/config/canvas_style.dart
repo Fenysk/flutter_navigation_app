@@ -19,6 +19,11 @@ class CanvasStyle {
     ..style = PaintingStyle.stroke
     ..strokeWidth = 2.0;
 
+  static final shortestPathStyle = Paint()
+    ..color = Colors.purple
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 3.0;
+
   static final TextStyle nodeTextStyle = TextStyle(
     color: Colors.red,
     fontSize: 12,

@@ -17,7 +17,7 @@ class CanvasService {
   }
 
   static void drawNodeWithLabel(Canvas canvas, Offset position, String label) {
-    final isSelected = NavigationService().isOffsetSelected(position);
+    final isSelected = NavigationService().isNodeSelected(position);
 
     canvas.drawCircle(position, isSelected ? nodeRadius + 3 : nodeRadius, isSelected ? CanvasStyle.selectedNodeStyle : CanvasStyle.nodeStyle);
 
@@ -39,7 +39,7 @@ class CanvasService {
     canvas.drawLine(start, end, CanvasStyle.routeStyle);
     final midpoint = Offset((start.dx + end.dx) / 2, (start.dy + end.dy) / 2);
 
-    final int distance = NavigationService.getDistanceBetweenNodes(end, start);
+    final int distance = NavigationService.calculateDistance(end, start);
     String displayText = '';
 
     if (shouldDrawLabel && shouldDrawDistance) {
@@ -73,6 +73,14 @@ class CanvasService {
     }
   }
 
+  static void drawShortestPath(Canvas canvas, List<Offset> path) {
+    if (path.length < 2) return;
+
+    for (int i = 0; i < path.length - 1; i++) {
+      canvas.drawLine(path[i], path[i + 1], CanvasStyle.shortestPathStyle);
+    }
+  }
+
   static void drawAllNodes(Canvas canvas) {
     for (final node in CanvasData.nodes.entries) {
       drawNodeWithLabel(canvas, node.key, node.value);
@@ -101,6 +109,8 @@ class CanvasService {
     for (final node in CanvasData.nodes.entries) {
       if (CanvasService.isMouseOverNode(details.localPosition, node.key)) {
         NavigationService().setNavigationPoint(node.key);
+        List<String> shortestPath = NavigationService().getShortestPathNodeLabels();
+        print(shortestPath);
         break;
       }
     }

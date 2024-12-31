@@ -22,6 +22,9 @@ class NavigationCanvas extends CustomPainter {
       shouldDrawDistance: true,
       shouldDrawLabel: false,
     );
+
+    List<Offset> shortestPath = navigationService.findShortestPath();
+    if (shortestPath.isNotEmpty) CanvasService.drawShortestPath(canvas, shortestPath);
   }
 
   @override

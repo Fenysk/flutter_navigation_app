@@ -10,31 +10,132 @@ class NavigationService extends ChangeNotifier {
   Offset? _navigationStart;
   Offset? _navigationEnd;
 
-  set navigationStart(Offset? value) => _navigationStart = value;
-  set navigationEnd(Offset? value) => _navigationEnd = value;
+  Set<Offset> _nodesToEvaluate = {};
+  Set<Offset> _evaluatedNodes = {};
+  Map<Offset, Offset> _pathTrace = {};
+  Map<Offset, int> _totalCostToNode = {};
+  Map<Offset, int> _costFromStartToNode = {};
 
-  void setNavigationPoint(Offset point) {
-    print('Navigation point set: ${CanvasData.nodes[point]}');
+  Offset? get navigationStart => _navigationStart;
+  Offset? get navigationEnd => _navigationEnd;
+  Set<Offset> get nodesToEvaluate => _nodesToEvaluate;
+  Set<Offset> get evaluatedNodes => _evaluatedNodes;
+  Map<Offset, Offset> get pathTrace => _pathTrace;
+  Map<Offset, int> get totalCostToNode => _totalCostToNode;
+  Map<Offset, int> get costFromStartToNode => _costFromStartToNode;
 
+  bool isNodeSelected(Offset node) => node == _navigationStart || node == _navigationEnd;
+
+  void setNavigationPoint(Offset selectedPoint) {
+    _updateNavigationPoints(selectedPoint);
+    _logConnectedNodesFromSelectedNode(selectedPoint);
+
+    notifyListeners();
+  }
+
+  void _updateNavigationPoints(Offset point) {
     if (_navigationStart == null && _navigationEnd == null) {
       _navigationStart = point;
     } else if (_navigationStart != null && _navigationEnd == null) {
       _navigationEnd = point;
     } else {
+      _navigationEnd = null;
       _navigationStart = point;
     }
-
-    List<Offset> aroundNodes = getAroundNodes(point);
-    print('Connected nodes: ${aroundNodes.map((node) => CanvasData.nodes[node]).join(', ')}');
-
-    notifyListeners();
   }
 
-  bool isOffsetSelected(Offset offset) {
-    return offset == _navigationStart || offset == _navigationEnd;
+  void _logConnectedNodesFromSelectedNode(Offset selectedPoint) {
+    List<Offset> connectedNodes = getConnectedNodes(selectedPoint);
+    print('Connected nodes: ${connectedNodes.map((node) => CanvasData.nodes[node]).join(', ')}');
   }
 
-  static int getDistanceBetweenNodes(Offset end, Offset start) => ((end - start).distance).round();
+  List<String> getShortestPathNodeLabels() {
+    if (_navigationStart == null || _navigationEnd == null) return [];
 
-  List<Offset> getAroundNodes(Offset center) => CanvasData.routes.where((route) => route.$1 == center || route.$2 == center).map((route) => route.$1 == center ? route.$2 : route.$1).toList();
+    List<Offset> path = findShortestPath();
+    List<String> nodeLabels = path.where((node) => CanvasData.nodes.containsKey(node)).map((node) => CanvasData.nodes[node]!).toList();
+
+    return nodeLabels;
+  }
+
+  List<Offset> findShortestPath() {
+    if (_navigationStart == null || _navigationEnd == null) return [];
+
+    _initializePathfinding();
+    List<Offset> path = _executeAStarAlgorithm();
+
+    return path;
+  }
+
+  void _initializePathfinding() {
+    _nodesToEvaluate = {
+      _navigationStart!
+    };
+    _evaluatedNodes = {};
+    _pathTrace = {};
+    _costFromStartToNode = {
+      _navigationStart!: 0
+    };
+    _totalCostToNode = {
+      _navigationStart!: calculateDistance(_navigationEnd!, _navigationStart!)
+    };
+  }
+
+  List<Offset> _executeAStarAlgorithm() {
+    while (_nodesToEvaluate.isNotEmpty) {
+      Offset currentNode = _findNodeWithLowestTotalCost();
+
+      if (currentNode == _navigationEnd) {
+        List<Offset> path = _reconstructPath(currentNode);
+        return path;
+      }
+
+      _evaluateNode(currentNode);
+    }
+
+    return [];
+  }
+
+  void _evaluateNode(Offset currentNode) {
+    _nodesToEvaluate.remove(currentNode);
+    _evaluatedNodes.add(currentNode);
+
+    for (Offset neighbor in getConnectedNodes(currentNode)) {
+      if (_evaluatedNodes.contains(neighbor)) continue;
+
+      int costToNeighbor = _costFromStartToNode[currentNode]! + calculateDistance(neighbor, currentNode);
+
+      if (!_nodesToEvaluate.contains(neighbor)) {
+        _nodesToEvaluate.add(neighbor);
+      } else if (costToNeighbor >= (_costFromStartToNode[neighbor] ?? double.infinity)) {
+        continue;
+      }
+
+      _updateNodeCosts(neighbor, currentNode, costToNeighbor);
+    }
+  }
+
+  void _updateNodeCosts(Offset neighbor, Offset currentNode, int costToNeighbor) {
+    _pathTrace[neighbor] = currentNode;
+    _costFromStartToNode[neighbor] = costToNeighbor;
+    _totalCostToNode[neighbor] = costToNeighbor + calculateDistance(_navigationEnd!, neighbor);
+  }
+
+  List<Offset> _reconstructPath(Offset endNode) {
+    List<Offset> path = [
+      endNode
+    ];
+    Offset currentNode = endNode;
+
+    while (_pathTrace.containsKey(currentNode)) {
+      currentNode = _pathTrace[currentNode]!;
+      path.insert(0, currentNode);
+    }
+
+    return path;
+  }
+
+  Offset _findNodeWithLowestTotalCost() => _nodesToEvaluate.reduce((a, b) => _totalCostToNode[a]! < _totalCostToNode[b]! ? a : b);
+  List<Offset> getConnectedNodes(Offset center) => CanvasData.routes.where((route) => route.$1 == center || route.$2 == center).map((route) => route.$1 == center ? route.$2 : route.$1).toList();
+  static int calculateDistance(Offset end, Offset start) => ((end - start).distance).round();
 }
