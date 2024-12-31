@@ -249,4 +249,33 @@ class CanvasData {
       }
     }
   }
+
+  static void removeRoute({
+    required Offset start,
+    required Offset end,
+  }) {
+    routes.removeWhere((route) => (route.$1 == start && route.$2 == end) || (route.$1 == end && route.$2 == start));
+    saveData();
+  }
+
+  static void removeNode(Offset nodePosition) {
+    routes.removeWhere((route) => route.$1 == nodePosition || route.$2 == nodePosition);
+    nodes.remove(nodePosition);
+    saveData();
+  }
+
+  static Offset? findNearestNode(Offset position, {double threshold = 50.0}) {
+    Offset? nearest;
+    double minDistance = double.infinity;
+
+    for (var nodePosition in nodes.keys) {
+      final distance = (nodePosition - position).distance;
+      if (distance < minDistance && distance < threshold) {
+        minDistance = distance;
+        nearest = nodePosition;
+      }
+    }
+
+    return nearest;
+  }
 }

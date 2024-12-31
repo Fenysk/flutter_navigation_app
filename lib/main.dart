@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:navigation_training/data/canvas_data.dart';
 import 'package:navigation_training/services/navigation_service.dart';
 import 'package:navigation_training/widgets/add_node_dialog.dart';
+import 'package:navigation_training/widgets/add_route_dialog.dart';
 import 'package:navigation_training/widgets/map_management.dart';
 import 'package:navigation_training/widgets/navigation_data_display.dart';
 import 'package:navigation_training/widgets/node_widget.dart';
@@ -49,6 +50,8 @@ class _MainAppState extends State<MainApp> {
 
   @override
   Widget build(BuildContext context) {
+    final shortestPath = _navigationService.findShortestPath();
+
     return MaterialApp(
       home: Scaffold(
         body: Builder(builder: (context) {
@@ -64,7 +67,8 @@ class _MainAppState extends State<MainApp> {
                   child: FittedBox(
                     fit: BoxFit.contain,
                     child: GestureDetector(
-                      onTapDown: (details) => onMapTap(details, context),
+                      onTapDown: (details) => onCreateNodeTap(details, context),
+                      onSecondaryTapDown: (details) => onCreateRouteTap(details, context),
                       child: Stack(
                         children: [
                           Image.asset(
@@ -78,7 +82,7 @@ class _MainAppState extends State<MainApp> {
                               start: route.$1,
                               end: route.$2,
                               label: route.$3,
-                              isPartOfShortestPath: _navigationService.findShortestPath().contains(route.$1) && _navigationService.findShortestPath().contains(route.$2),
+                              isPartOfShortestPath: shortestPath.contains(route.$1) && shortestPath.contains(route.$2),
                             ),
                           ),
                           ...CanvasData.nodes.entries.map(
@@ -97,7 +101,9 @@ class _MainAppState extends State<MainApp> {
               ),
               SizedBox(
                 width: 400,
-                child: MapManagement(),
+                child: MapManagement(
+                  refreshCanvas: () => setState(() {}),
+                ),
               ),
             ],
           );
@@ -106,11 +112,11 @@ class _MainAppState extends State<MainApp> {
     );
   }
 
-  void onMapTap(TapDownDetails details, BuildContext context) async {
+  void onCreateNodeTap(TapDownDetails details, BuildContext context) async {
     final position = details.localPosition;
     final dialogResult = await _showAddNodeDialog(context);
 
-    if (_isValidDialogResult(dialogResult)) {
+    if (_isValidAddNodeDialogResult(dialogResult)) {
       CanvasData.createNodeWithConnections(
         position: position,
         nodeName: dialogResult!.$1!,
@@ -120,12 +126,19 @@ class _MainAppState extends State<MainApp> {
     }
   }
 
-  bool _isValidDialogResult(
+  bool _isValidAddNodeDialogResult(
           (
             String?,
             List<Offset>
           )? result) =>
       result != null && result.$1 != null && result.$1!.isNotEmpty;
+
+  bool _isValidAddRouteDialogResult(
+          (
+            String?,
+            List<Offset>
+          )? result) =>
+      result != null && result.$2.isNotEmpty;
 
   Future<
       (
@@ -140,5 +153,43 @@ class _MainAppState extends State<MainApp> {
       context: context,
       builder: (context) => AddNodeDialog(),
     );
+  }
+
+  Future<
+      (
+        String?,
+        List<Offset>
+      )?> _showAddRouteDialog(BuildContext context) {
+    return showDialog<
+        (
+          String?,
+          List<Offset>
+        )>(
+      context: context,
+      builder: (context) => AddRouteDialog(),
+    );
+  }
+
+  void onCreateRouteTap(TapDownDetails details, BuildContext context) async {
+    final position = details.localPosition;
+    final nearestNode = CanvasData.findNearestNode(position);
+    if (nearestNode == null) return;
+
+    final dialogResult = await _showAddRouteDialog(context);
+
+    if (_isValidAddRouteDialogResult(dialogResult)) {
+      for (var selectedNode in dialogResult!.$2) {
+        if (selectedNode != nearestNode) {
+          CanvasData.addRoute(
+            offset1: selectedNode,
+            offset2: nearestNode,
+            nodeName1: CanvasData.nodes[selectedNode]!,
+            nodeName2: CanvasData.nodes[nearestNode]!,
+            routeName: '${CanvasData.nodes[selectedNode]!}-${CanvasData.nodes[nearestNode]!}',
+          );
+        }
+      }
+      setState(() {});
+    }
   }
 }

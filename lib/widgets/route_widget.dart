@@ -58,8 +58,11 @@ class _RoutePainter extends CustomPainter {
 
     canvas.drawLine(start, end, paint);
 
+    final distance = (end - start).distance.toStringAsFixed(0);
+    final displayText = '$label ($distance)';
+
     final textSpan = TextSpan(
-      text: label,
+      text: distance,
       style: const TextStyle(
         color: Colors.blue,
         fontSize: 10,

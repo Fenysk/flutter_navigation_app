@@ -64,6 +64,20 @@ class NavigationService extends ChangeNotifier {
     _initializePathfinding();
     List<Offset> path = _executeAStarAlgorithm();
 
+    if (path.isEmpty) {
+      CanvasData.addRoute(
+        offset1: _navigationStart!,
+        offset2: _navigationEnd!,
+        nodeName1: CanvasData.nodes[_navigationStart]!,
+        nodeName2: CanvasData.nodes[_navigationEnd]!,
+        routeName: '${CanvasData.nodes[_navigationStart]}-${CanvasData.nodes[_navigationEnd]}',
+      );
+      notifyListeners();
+
+      _initializePathfinding();
+      path = _executeAStarAlgorithm();
+    }
+
     return path;
   }
 
