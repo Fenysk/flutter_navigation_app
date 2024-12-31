@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:navigation_training/data/canvas_data.dart';
 import 'package:navigation_training/services/navigation_service.dart';
 import 'package:navigation_training/widgets/add_node_dialog.dart';
+import 'package:navigation_training/widgets/map_management.dart';
 import 'package:navigation_training/widgets/navigation_data_display.dart';
 import 'package:navigation_training/widgets/node_widget.dart';
 import 'package:navigation_training/widgets/route_widget.dart';
@@ -84,6 +85,10 @@ class _MainAppState extends State<MainApp> {
                     ),
                   ),
                 ),
+              ),
+              SizedBox(
+                width: 400,
+                child: MapManagement(),
               ),
             ],
           );
